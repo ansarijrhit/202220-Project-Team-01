@@ -1,4 +1,4 @@
-package example;
+package tests;
 
 public class TestClass {
 	private String BadCase, camelCase;
@@ -6,5 +6,14 @@ public class TestClass {
 	
 	public boolean returnTrue(double unused) {
 		return true;
+	}
+	
+	public void messageChain() {
+		System.out.println(getOne());
+		getOne();
+	}
+	
+	public int getOne() {
+		return 1;
 	}
 }
