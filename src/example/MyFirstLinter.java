@@ -2,6 +2,7 @@ package example;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
@@ -19,7 +20,14 @@ public class MyFirstLinter {
 	
 	String[] fieldForAnalysisByThisProgram = new String[1];
 	
-	 //oijeafoi
+	public MyFirstLinter(ClassNode classNode) {
+		printClass(classNode);
+
+		printFields(classNode);
+		
+		printMethods(classNode);
+	}
+	
 	/** 
 	 * Reads in a list of Java Classes and prints fun facts about them. 
 	 * 
@@ -47,26 +55,35 @@ public class MyFirstLinter {
 			reader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
 			// Now we can navigate the classNode and look for things we are interested in.
-			printClass(classNode);
-
-			printFields(classNode);
-			
-			printMethods(classNode);
+			new MyFirstLinter(classNode);
 		}
 	}
+	
+	private boolean camelCase(String fieldName) {
+		Pattern p = Pattern.compile("^[a-z]+(?:[A-Z][a-z]+)*$");
+		return p.matcher(fieldName).matches();
+	}
+	
+	private boolean pascalCase(String fieldName) {
+		Pattern p = Pattern.compile("^[A-Z][a-z]+(?:[A-Z][a-z]+)*$");
+		return p.matcher(fieldName).matches();
+	}
 
-	private static void printClass(ClassNode classNode) {
+	private void printClass(ClassNode classNode) {
 		System.out.println("Class's Internal JVM name: " + classNode.name);
 		System.out.println("User-friendly name: "
 				+ Type.getObjectType(classNode.name).getClassName());
 		System.out.println("public? "
 				+ ((classNode.access & Opcodes.ACC_PUBLIC) != 0));
+		String[] classNameArr = classNode.name.split("/");
+		String className = classNameArr[classNameArr.length-1];
+		System.out.println("\tPascal Case? " + pascalCase(className));
 		System.out.println("Extends: " + classNode.superName);
 		System.out.println("Implements: " + classNode.interfaces);
 		// TODO: how do I write a lint check to tell if this class has a bad name?
 	}
 
-	private static void printFields(ClassNode classNode) {
+	private void printFields(ClassNode classNode) {
 		// Print all fields (note the cast; ASM doesn't store generic data with its Lists)
 		List<FieldNode> fields = (List<FieldNode>) classNode.fields;
 		for (FieldNode field : fields) {
@@ -81,12 +98,13 @@ public class MyFirstLinter {
 			// TODO: how do you tell if something has package-private access? (ie no access modifiers?)
 			
 			// TODO: how do I write a lint check to tell if this field has a bad name?
+			System.out.println("\tCamel Case? " + camelCase(field.name));
 			
 			System.out.println();
 		}
 	}
 
-	private static void printMethods(ClassNode classNode) {
+	private void printMethods(ClassNode classNode) {
 		List<MethodNode> methods = (List<MethodNode>) classNode.methods;
 		for (MethodNode method : methods) {
 			System.out.println("	Method: " + method.name);
@@ -108,6 +126,8 @@ public class MyFirstLinter {
 					+ ((method.access & Opcodes.ACC_STATIC) != 0));
 			// How do you tell if something has default access? (ie no access modifiers?)
 
+			System.out.println("\tCamel Case? " + camelCase(method.name));
+			
 			System.out.println();
 
 			// Print the method's instructions
@@ -115,7 +135,7 @@ public class MyFirstLinter {
 		}
 	}
 
-	private static void printInstructions(MethodNode methodNode) {
+	private void printInstructions(MethodNode methodNode) {
 		InsnList instructions = methodNode.instructions;
 		for (int i = 0; i < instructions.size(); i++) {
 
